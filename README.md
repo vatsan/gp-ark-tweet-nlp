@@ -117,6 +117,9 @@ Distributed by: (id)
 Here are some sample rows from the table
 ```SQL
 vatsandb=# select id, tweet_body from sentidemo.training_data limit 10;
+```
+
+```SQL
      id     |                                                                tweet_body                                                                 
 ------------+-------------------------------------------------------------------------------------------------------------------------------------------
  1467820906 | @localtweeps Wow, tons of replies from you, may have to unfollow so I can see my friends' tweets, you're scrolling the feed a lot. 
