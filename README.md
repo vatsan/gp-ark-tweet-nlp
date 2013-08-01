@@ -49,8 +49,7 @@ As root run the following
 [gpadmin@mdw ~]$ gpconfig -c pljava_classpath -v \'gp-ark-tweet-nlp.jar:ark-tweet-nlp-0.3.2.jar:examples.jar\'
 ```
 
-3. Increase memory available to PL/Java
-Run the following commands on the **Master Segment**
+3. To increase memory available to PL/Java run the following commands on the **Master Segment**
 ```
 [gpadmin@mdw ~]$ gpconfig -c pljava_vmoptions -v \'-Xmx512M\' 
 [gpadmin@mdw ~]$ gpstop -r
