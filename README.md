@@ -88,9 +88,9 @@ AS
 ```SQL
 DROP FUNCTION IF EXISTS posdemo.tag_pos(varchar);
 CREATE FUNCTION posdemo.tag_pos(varchar)
-			RETURNS SETOF token_tag
+	RETURNS SETOF token_tag
 AS 
-		  'postagger.nlp.POSTagger.tagTweet'
+	'postagger.nlp.POSTagger.tagTweet'
 IMMUTABLE LANGUAGE JAVAU;
 ```
 Note the use of `javau` instead of just `java` in the **UDF**. This is because we are using the untrusted version of PL/Java as the part-of-speech tagger has to read a model file from within `gp-ark-tweet-nlp.jar` 
