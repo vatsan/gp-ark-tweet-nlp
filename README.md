@@ -1,10 +1,14 @@
-Complete documentation can be found on: http://vatsan.github.io/gp-ark-tweet-nlp
+Parts-of-speech tagging for Twitter via SQL
+=============================================
 
 `gp-ark-tweet-nlp` is a PL/Java Wrapper for [`Ark-Tweet-NLP`](http://www.ark.cs.cmu.edu/TweetNLP/) - a state-of-the-art parts-of-speech tagger for Twitter.
 This package enables you to perform part-of-speech tagging on Tweets, using SQL. If your environment is an MPP system like Pivotal's Greenplum Database
 you can piggyback on the MPP architecture and achieve implicit parallelism in your part-of-speech tagging tasks.
 
-##Installation
+The GitHub page can be found at: http://vatsan.github.io/gp-ark-tweet-nlp/
+
+Installation
+=============
 
 To be able to use the PL/Java wrapper you'll need to ensure some pre-requisites are satisfied in your environment.
 
