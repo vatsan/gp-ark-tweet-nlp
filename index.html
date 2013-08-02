@@ -1,0 +1,239 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>Gp-ark-tweet-nlp by vatsan</title>
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+    <script src="javascripts/main.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+
+  </head>
+  <body>
+
+      <header>
+        <h1>Gp-ark-tweet-nlp</h1>
+        <p>A PL/Java Wrapper on Ark-Tweet-NLP (http://www.ark.cs.cmu.edu/TweetNLP/) - Twitter Parts-of-speech tagger in Postgres/Greenplum</p>
+      </header>
+
+      <div id="banner">
+        <span id="logo"></span>
+
+        <a href="https://github.com/vatsan/gp-ark-tweet-nlp" class="button fork"><strong>View On GitHub</strong></a>
+        <div class="downloads">
+          <span>Downloads:</span>
+          <ul>
+            <li><a href="https://github.com/vatsan/gp-ark-tweet-nlp/zipball/master" class="button">ZIP</a></li>
+            <li><a href="https://github.com/vatsan/gp-ark-tweet-nlp/tarball/master" class="button">TAR</a></li>
+          </ul>
+        </div>
+      </div><!-- end banner -->
+
+    <div class="wrapper">
+      <nav>
+        <ul></ul>
+      </nav>
+      <section>
+        <p><code>gp-ark-tweet-nlp</code> is a PL/Java Wrapper for <a href="http://www.ark.cs.cmu.edu/TweetNLP/"><code>Ark-Tweet-NLP</code></a> - a state-of-the-art parts-of-speech tagger for Twitter.
+This package enables you to perform part-of-speech tagging on Tweets, using SQL. If your environment is an MPP system like Pivotal's Greenplum Database
+you can piggyback on the MPP architecture and achieve implicit parallelism in your part-of-speech tagging tasks.</p>
+
+<h2>
+<a name="installation" class="anchor" href="#installation"><span class="octicon octicon-link"></span></a>Installation</h2>
+
+<p>To be able to use the PL/Java wrapper you'll need to ensure some pre-requisites are satisfied in your environment.</p>
+
+<h3>
+<a name="1-ensure-pljava-is-installed-and-it-works" class="anchor" href="#1-ensure-pljava-is-installed-and-it-works"><span class="octicon octicon-link"></span></a>1. Ensure PL/Java is installed and it works</h3>
+
+<div class="highlight"><pre><span class="c1">--Install PL/Java</span>
+<span class="k">CREATE</span> <span class="k">LANGUAGE</span> <span class="n">pljava</span><span class="p">;</span>
+
+<span class="c1">-- Define function mapping</span>
+<span class="k">DROP</span> <span class="k">FUNCTION</span> <span class="n">IF</span> <span class="k">EXISTS</span> <span class="n">getsysprop</span><span class="p">(</span><span class="nb">varchar</span><span class="p">);</span>
+<span class="k">CREATE</span> <span class="k">FUNCTION</span> <span class="n">getsysprop</span><span class="p">(</span><span class="nb">varchar</span><span class="p">)</span> 
+     <span class="k">RETURNS</span> <span class="nb">varchar</span>
+<span class="k">AS</span>
+<span class="s1">'java.lang.System.getProperty'</span>
+<span class="k">LANGUAGE</span> <span class="n">pljava</span><span class="p">;</span>
+
+<span class="c1">--Invoke function</span>
+<span class="k">SELECT</span> <span class="n">getsysprop</span><span class="p">(</span><span class="s1">'user.home'</span><span class="p">);</span>
+</pre></div>
+
+<h3>
+<a name="2-ensure-java_home-is-set-on-all-hosts" class="anchor" href="#2-ensure-java_home-is-set-on-all-hosts"><span class="octicon octicon-link"></span></a>2. Ensure <code>JAVA_HOME</code> is set on all hosts</h3>
+
+<p>As root run the following</p>
+
+<ol>
+<li>
+<p>gpssh into all hosts</p>
+
+<pre><code>[gpadmin@mdw ~]$ gpssh -f &lt;hostfile&gt; ;
+</code></pre>
+</li>
+<li>
+<p>In the gpssh prompt, run the following:</p>
+
+<pre><code>[gpadmin@mdw ~]$ echo "export JAVA_HOME=/usr/java/jdk1.6.0_24" &gt;&gt; /home/gpadmin/.bashrc
+</code></pre>
+</li>
+</ol><h3>
+<a name="3-prepare-the-greenplumpostgres-environment-to-talk-to-our-pljava-wrapper" class="anchor" href="#3-prepare-the-greenplumpostgres-environment-to-talk-to-our-pljava-wrapper"><span class="octicon octicon-link"></span></a>3. Prepare the Greenplum/Postgres Environment to talk to our PL/Java wrapper</h3>
+
+<ol>
+<li>
+<p>Copy the Libraries: The packaged jar file <a href="https://github.com/vatsan/gp-ark-tweet-nlp/tree/master/build"> <code>gp-ark-tweet-nlp.jar</code></a> that located in the folder <code>build/</code></p>
+
+<pre><code>[gpadmin@mdw ~]$ gpscp -f &lt;hostfile&gt; gp-ark-tweet-nlp.jar =:/usr/local/greenplum-db/lib/postgresql/java/
+[gpadmin@mdw ~]$ gpscp -f &lt;hostfile&gt; ark-tweet-nlp-0.3.2.jar =:/usr/local/greenplum-db/lib/postgresql/java/
+</code></pre>
+</li>
+<li>
+<p>Update the <code>CLASSPATH</code> for PL/Java so that it can find our libraries</p>
+
+<pre><code>[gpadmin@mdw ~]$ gpconfig -c pljava_classpath -v \'gp-ark-tweet-nlp.jar:ark-tweet-nlp-0.3.2.jar:examples.jar\'
+</code></pre>
+</li>
+<li>
+<p>To increase memory available to PL/Java run the following commands on the <strong>Master Segment</strong></p>
+
+<pre><code>[gpadmin@mdw ~]$ gpconfig -c pljava_vmoptions -v \'-Xmx512M\' 
+[gpadmin@mdw ~]$ gpstop -r
+</code></pre>
+</li>
+<li>
+<p>Ensure the options have taken effect </p>
+
+<pre><code>[gpadmin@mdw ~]$ gpconfig --show pljava_vmoptions
+Values on all segments are consistent
+GUC          : pljava_vmoptions
+Master  value: -Xmx512M
+Segment value: -Xmx512M
+[gpadmin@mdw ~]$ 
+</code></pre>
+</li>
+</ol><p>You are now set to run the part-of-speech tagger in SQL by defining a <strong>User Defined Function</strong> to invoke the PL/Java wrapper and a <strong>User Defined Type</strong>
+to define the type of the returned result.</p>
+
+<h1>
+<a name="usage" class="anchor" href="#usage"><span class="octicon octicon-link"></span></a>Usage</h1>
+
+<ol>
+<li>
+<p>We'll first declare a <strong>UDT</strong> to define the type of the result return by our part-of-speech tagger</p>
+
+<div class="highlight"><pre><span class="c1">-- Define a type to hold [tweet_id, token_index, token, tag] items</span>
+<span class="k">DROP</span> <span class="k">TYPE</span> <span class="n">IF</span> <span class="k">EXISTS</span> <span class="n">token_tag</span><span class="p">;</span>
+<span class="k">CREATE</span> <span class="k">TYPE</span> <span class="n">token_tag</span>
+<span class="k">AS</span>
+<span class="p">(</span>
+<span class="n">indx</span> <span class="nb">int</span><span class="p">,</span> 
+<span class="n">token</span> <span class="nb">text</span><span class="p">,</span>
+<span class="n">tag</span> <span class="nb">text</span>
+<span class="p">);</span>
+</pre></div>
+</li>
+<li>
+<p>We'll then declare a <strong>UDF</strong> to invoke the PL/Java wrapper</p>
+
+<div class="highlight"><pre><span class="k">DROP</span> <span class="k">FUNCTION</span> <span class="n">IF</span> <span class="k">EXISTS</span> <span class="n">posdemo</span><span class="p">.</span><span class="n">tag_pos</span><span class="p">(</span><span class="nb">varchar</span><span class="p">);</span>
+<span class="k">CREATE</span> <span class="k">FUNCTION</span> <span class="n">posdemo</span><span class="p">.</span><span class="n">tag_pos</span><span class="p">(</span><span class="nb">varchar</span><span class="p">)</span>
+<span class="k">RETURNS</span> <span class="k">SETOF</span> <span class="n">token_tag</span>
+<span class="k">AS</span> 
+<span class="s1">'postagger.nlp.POSTagger.tagTweet'</span>
+<span class="k">IMMUTABLE</span> <span class="k">LANGUAGE</span> <span class="n">JAVAU</span><span class="p">;</span>
+</pre></div>
+
+<p>Note the use of <code>javau</code> instead of just <code>java</code> in the <strong>UDF</strong>. This is because we are using the untrusted version of PL/Java as the part-of-speech tagger has to read a model file from within <code>gp-ark-tweet-nlp.jar</code> 
+Without the untrusted language, we will encounter a <code>java.lang.SecurityException</code> when the code tries to read the model file embedded in <code>gp-ark-tweet-nlp.jar</code>.</p>
+</li>
+<li><p>Finally we can invoke the parts-of-speech tagger on a table containing a tweet column like so:</p></li>
+</ol><div class="highlight"><pre><span class="n">vatsandb</span><span class="o">=#</span> <span class="err">\</span><span class="n">d</span><span class="o">+</span> <span class="n">posdemo</span><span class="p">.</span><span class="n">training_data</span>
+                        <span class="k">Table</span> <span class="ss">"sentidemo.training_data"</span>
+   <span class="k">Column</span>   <span class="o">|</span>            <span class="k">Type</span>             <span class="o">|</span> <span class="n">Modifiers</span> <span class="o">|</span> <span class="k">Storage</span>  <span class="o">|</span> <span class="n">Description</span> 
+<span class="c1">------------+-----------------------------+-----------+----------+-------------</span>
+ <span class="n">rating</span>     <span class="o">|</span> <span class="nb">integer</span>                     <span class="o">|</span>           <span class="o">|</span> <span class="n">plain</span>    <span class="o">|</span> 
+ <span class="n">id</span>         <span class="o">|</span> <span class="nb">bigint</span>                      <span class="o">|</span>           <span class="o">|</span> <span class="n">plain</span>    <span class="o">|</span> 
+ <span class="n">ts</span>         <span class="o">|</span> <span class="k">timestamp</span> <span class="k">without</span> <span class="n">time</span> <span class="k">zone</span> <span class="o">|</span>           <span class="o">|</span> <span class="n">plain</span>    <span class="o">|</span> 
+ <span class="n">query</span>      <span class="o">|</span> <span class="nb">text</span>                        <span class="o">|</span>           <span class="o">|</span> <span class="n">extended</span> <span class="o">|</span> 
+ <span class="n">poster</span>     <span class="o">|</span> <span class="nb">text</span>                        <span class="o">|</span>           <span class="o">|</span> <span class="n">extended</span> <span class="o">|</span> 
+ <span class="n">tweet_body</span> <span class="o">|</span> <span class="nb">text</span>                        <span class="o">|</span>           <span class="o">|</span> <span class="n">extended</span> <span class="o">|</span> 
+<span class="n">Has</span> <span class="k">OIDs</span><span class="p">:</span> <span class="k">no</span>
+<span class="n">Distributed</span> <span class="k">by</span><span class="p">:</span> <span class="p">(</span><span class="n">id</span><span class="p">)</span>
+</pre></div>
+
+<p>Here are some sample rows from the table</p>
+
+<div class="highlight"><pre><span class="n">vatsandb</span><span class="o">=#</span> <span class="k">select</span> <span class="n">id</span><span class="p">,</span> <span class="n">tweet_body</span> <span class="k">from</span> <span class="n">sentidemo</span><span class="p">.</span><span class="n">training_data</span> <span class="k">limit</span> <span class="mi">10</span><span class="p">;</span>
+</pre></div>
+
+<div class="highlight"><pre>     <span class="n">id</span>     <span class="o">|</span>                                                                <span class="n">tweet_body</span>                                                                 
+<span class="c1">------------+-------------------------------------------------------------------------------------------------------------------------------------------</span>
+ <span class="mi">1467820906</span> <span class="o">|</span> <span class="o">@</span><span class="n">localtweeps</span> <span class="n">Wow</span><span class="p">,</span> <span class="n">tons</span> <span class="k">of</span> <span class="n">replies</span> <span class="k">from</span> <span class="n">you</span><span class="p">,</span> <span class="n">may</span> <span class="n">have</span> <span class="k">to</span> <span class="n">unfollow</span> <span class="n">so</span> <span class="n">I</span> <span class="n">can</span> <span class="n">see</span> <span class="n">my</span> <span class="n">friends</span><span class="s1">' tweets, you'</span><span class="n">re</span> <span class="n">scrolling</span> <span class="n">the</span> <span class="n">feed</span> <span class="n">a</span> <span class="n">lot</span><span class="p">.</span> 
+ <span class="mi">1467862806</span> <span class="o">|</span> <span class="o">@</span><span class="n">MySteezRadio</span> <span class="n">I</span><span class="s1">'m goin'</span> <span class="k">to</span> <span class="n">follow</span> <span class="n">u</span><span class="p">,</span> <span class="n">since</span> <span class="n">u</span> <span class="n">didn</span><span class="s1">'t  LOL  GO ANGELS!</span>
+<span class="s1"> 1467891880 | Argh! I was suuuper sleepy an hour ago, now I'</span><span class="n">m</span> <span class="n">wide</span> <span class="n">awake</span><span class="p">.</span>  <span class="n">Hope</span> <span class="n">I</span> <span class="n">don</span><span class="s1">'t stay up all night. :-/</span>
+<span class="s1"> 1467896211 | michigan state you make me sad </span>
+<span class="s1"> 1467911846 | @bananaface IM SORRY I GOT YOU SICK.  lol. going to bed too. NIGHT!</span>
+<span class="s1"> 1467962634 | Im in the mood for some chocolate. I want..... Miniature Reeses cups. Now </span>
+<span class="s1"> 1467979881 | @redvinylgirl my mom has it. I wish you the best of luck </span>
+<span class="s1"> 1467987712 | Change of plans, we ordered Macs instead. Time to hit the books! </span>
+<span class="s1"> 1467996032 | Funny how the little things make me homesick, criminals breakn n2 a brownstone on LawNOrd CI made me misty </span>
+<span class="s1"> 1468000208 | Man... taxes suck.  I'</span><span class="n">m</span> <span class="n">horrified</span> <span class="n">that</span> <span class="n">i</span> <span class="n">did</span> <span class="n">something</span> <span class="n">wrong</span> <span class="k">on</span> <span class="n">them</span><span class="p">.</span>  <span class="n">TurboTax</span> <span class="n">decided</span> <span class="k">to</span> <span class="n">keep</span> <span class="n">around</span> <span class="n">a</span> <span class="n">lot</span> <span class="k">of</span> <span class="n">the</span> <span class="n">stuff</span> <span class="n">I</span> <span class="n">turned</span> <span class="k">off</span><span class="p">.</span>  
+<span class="p">(</span><span class="mi">10</span> <span class="k">rows</span><span class="p">)</span>
+
+<span class="n">Time</span><span class="p">:</span> <span class="mi">329</span><span class="p">.</span><span class="mi">507</span> <span class="n">ms</span>
+</pre></div>
+
+<p>Now we can perform parts-of-speech tagging of the tweets</p>
+
+<div class="highlight"><pre><span class="k">select</span> <span class="n">id</span><span class="p">,</span> 
+       <span class="p">(</span><span class="n">t</span><span class="p">).</span><span class="n">indx</span><span class="p">,</span> 
+       <span class="p">(</span><span class="n">t</span><span class="p">).</span><span class="n">token</span><span class="p">,</span> 
+       <span class="p">(</span><span class="n">t</span><span class="p">).</span><span class="n">tag</span>
+<span class="k">from</span>
+<span class="p">(</span>
+    <span class="k">select</span> <span class="n">id</span><span class="p">,</span> 
+           <span class="n">posdemo</span><span class="p">.</span><span class="n">tag_pos</span><span class="p">(</span><span class="n">tweet_body</span><span class="p">)</span> <span class="k">as</span> <span class="n">t</span>
+    <span class="k">from</span> <span class="n">posdemo</span><span class="p">.</span><span class="n">training_data</span>
+<span class="p">)</span> <span class="n">q</span>
+</pre></div>
+
+<p>Which returns (limitng to 10 rows for sampel output)</p>
+
+<div class="highlight"><pre>     <span class="n">id</span>     <span class="o">|</span> <span class="n">indx</span> <span class="o">|</span>  <span class="n">token</span>   <span class="o">|</span> <span class="n">tag</span> 
+<span class="c1">------------+------+----------+-----</span>
+ <span class="mi">1467810672</span> <span class="o">|</span>    <span class="mi">0</span> <span class="o">|</span> <span class="k">is</span>       <span class="o">|</span> <span class="n">V</span>
+ <span class="mi">1467810672</span> <span class="o">|</span>    <span class="mi">1</span> <span class="o">|</span> <span class="n">upset</span>    <span class="o">|</span> <span class="n">A</span>
+ <span class="mi">1467810672</span> <span class="o">|</span>    <span class="mi">2</span> <span class="o">|</span> <span class="n">that</span>     <span class="o">|</span> <span class="n">P</span>
+ <span class="mi">1467810672</span> <span class="o">|</span>    <span class="mi">3</span> <span class="o">|</span> <span class="n">he</span>       <span class="o">|</span> <span class="n">O</span>
+ <span class="mi">1467810672</span> <span class="o">|</span>    <span class="mi">4</span> <span class="o">|</span> <span class="n">can</span><span class="err">'</span><span class="n">t</span>    <span class="o">|</span> <span class="n">V</span>
+ <span class="mi">1467810672</span> <span class="o">|</span>    <span class="mi">5</span> <span class="o">|</span> <span class="k">update</span>   <span class="o">|</span> <span class="n">V</span>
+ <span class="mi">1467810672</span> <span class="o">|</span>    <span class="mi">6</span> <span class="o">|</span> <span class="n">his</span>      <span class="o">|</span> <span class="n">D</span>
+ <span class="mi">1467810672</span> <span class="o">|</span>    <span class="mi">7</span> <span class="o">|</span> <span class="n">Facebook</span> <span class="o">|</span> <span class="o">^</span>
+ <span class="mi">1467810672</span> <span class="o">|</span>    <span class="mi">8</span> <span class="o">|</span> <span class="k">by</span>       <span class="o">|</span> <span class="n">P</span>
+ <span class="mi">1467810672</span> <span class="o">|</span>    <span class="mi">9</span> <span class="o">|</span> <span class="n">texting</span>  <span class="o">|</span> <span class="n">V</span>
+<span class="p">(</span><span class="mi">10</span> <span class="k">rows</span><span class="p">)</span>
+
+</pre></div>
+
+<h1>
+<a name="questions" class="anchor" href="#questions"><span class="octicon octicon-link"></span></a>Questions?</h1>
+
+<p>You can reach me at <a href="mailto:vatsan.cs@utexas.edu">vatsan.cs@utexas.edu</a></p>
+      </section>
+      <footer>
+        <p>Project maintained by <a href="https://github.com/vatsan">vatsan</a></p>
+        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://twitter.com/michigangraham">mattgraham</a></small></p>
+      </footer>
+    </div>
+    <!--[if !IE]><script>fixScale(document);</script><![endif]-->
+    
+  </body>
+</html>
