@@ -58,6 +58,7 @@ Updating the `pljava_classpath` environment variable requires you to also instru
 ```
 [gpadmin@mdw ~]$ gpstop -u
 ```
+You will have to reconnect to your database for this new parameter to take effect in your session.
 
 3. To increase memory available to PL/Java run the following commands on the **Master Segment**
 ```
