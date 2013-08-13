@@ -55,6 +55,11 @@ As root run the following
 [gpadmin@mdw ~]$ gpconfig -c pljava_classpath -v \'gp-ark-tweet-nlp.jar:ark-tweet-nlp-0.3.2.jar:examples.jar\'
 ```
 
+Updating the pljava_classpath environment variable requires you to also instruct the Greenplum database to reload
+```
+[gpadmin@mdw ~]$ gpstop -u
+```
+
 3. To increase memory available to PL/Java run the following commands on the **Master Segment**
 ```
 [gpadmin@mdw ~]$ gpconfig -c pljava_vmoptions -v \'-Xmx512M\' 
