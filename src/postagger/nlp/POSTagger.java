@@ -1,8 +1,10 @@
 package postagger.nlp;
 
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+
 import org.postgresql.pljava.ResultSetProvider;
 import postagger.util.TaggedResult;
 import postagger.util.TaggedResultProvider;
@@ -48,7 +50,7 @@ public class POSTagger {
 		int idx=0;
 		// Return a set of [token index, token, tag] tuples
 		for (TaggedToken tt:taggedTokens) {
-		     result.add(new TaggedResult(idx,tt.token, tt.tag));
+		     result.add(new TaggedResult(idx, removeSurrogates(tt.token), tt.tag));
 		     idx++;
 		}
 		return new TaggedResultProvider(result);
@@ -73,8 +75,30 @@ public class POSTagger {
 			 result.append(String.valueOf(idx)+":"+tt.token+":"+tt.tag+"\n");
 			 idx++;
 		}
-
 		return result.toString();
+    }
+    
+    /**
+     * Any invalid UTF-8 chars have to be removed from the output.
+     * This can happen if there are unmatched surrogates in the string (the tokenizer seems to create this).
+     * @param tweet
+     * @return
+     */
+    protected static String removeSurrogates(String text) {
+    	if(text==null) {
+    		return text;
+    	}
+    	StringBuffer result = new StringBuffer();
+    	for(int indx=0; indx<text.length();indx++) {
+            char c = text.charAt(indx);
+            //Low or high surrogates will be stripped out (the input is expected to not contain surrogates
+            //as PL/Java mangles non-BMP chars. As a result we also check that the ark-tweet-nlp tokenizer doesn't create any invalid 
+            //or unmatched surrogates.
+            if(!(Character.isLowSurrogate(c) || Character.isHighSurrogate(c))) {
+            	result.append(c);
+            }
+    	}
+    	return result.toString();
     }
     
     
