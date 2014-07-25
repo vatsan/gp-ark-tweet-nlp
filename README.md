@@ -35,24 +35,24 @@ SELECT getsysprop('user.home');
 ### 2. Ensure `JAVA_HOME` is set on all hosts
 As root run the following
 
-1. gpssh into all hosts
+* gpssh into all hosts
 ```
 [gpadmin@mdw ~]$ gpssh -f <hostfile> ;
 ```
 
-2. In the gpssh prompt, run the following:
+* In the gpssh prompt, run the following:
 ```
 [gpadmin@mdw ~]$ echo "export JAVA_HOME=/usr/java/jdk1.6.0_24" >> /home/gpadmin/.bashrc
 ```
 
 ###3. Prepare the Greenplum/Postgres Environment to talk to our PL/Java wrapper
-1. Copy the Libraries: The packaged jar file [ `gp-ark-tweet-nlp.jar`](https://github.com/vatsan/gp-ark-tweet-nlp/tree/master/build) that located in the folder `build/`
+* Copy the Libraries: The packaged jar file [ `gp-ark-tweet-nlp.jar`](https://github.com/vatsan/gp-ark-tweet-nlp/tree/master/build) that located in the folder `build/`
 ```
 [gpadmin@mdw ~]$ gpscp -f <hostfile> gp-ark-tweet-nlp.jar =:/usr/local/greenplum-db/lib/postgresql/java/
 [gpadmin@mdw ~]$ gpscp -f <hostfile> ark-tweet-nlp-0.3.2.jar =:/usr/local/greenplum-db/lib/postgresql/java/
 ```
 
-2. Update the `CLASSPATH` for PL/Java so that it can find our libraries
+* Update the `CLASSPATH` for PL/Java so that it can find our libraries
 ```
 [gpadmin@mdw ~]$ gpconfig -c pljava_classpath -v \'gp-ark-tweet-nlp.jar:ark-tweet-nlp-0.3.2.jar:examples.jar\'
 ```
@@ -62,13 +62,13 @@ Updating the `pljava_classpath` environment variable requires you to also instru
 ```
 You will have to reconnect to your database for this new parameter to take effect in your session.
 
-3. To increase memory available to PL/Java run the following commands on the **Master Segment**
+* To increase memory available to PL/Java run the following commands on the **Master Segment**
 ```
 [gpadmin@mdw ~]$ gpconfig -c pljava_vmoptions -v \'-Xmx512M\' 
 [gpadmin@mdw ~]$ gpstop -r
 ```
 
-4. Ensure the options have taken effect 
+* Ensure the options have taken effect 
 ```
 [gpadmin@mdw ~]$ gpconfig --show pljava_vmoptions
 Values on all segments are consistent
@@ -84,7 +84,7 @@ to define the type of the returned result.
 Usage
 ======
 
-1. We'll first declare a **UDT** to define the type of the result return by our part-of-speech tagger
+* We'll first declare a **UDT** to define the type of the result return by our part-of-speech tagger
 ```SQL
 -- Define a type to hold [tweet_id, token_index, token, tag] items
 DROP TYPE IF EXISTS token_tag;
@@ -97,7 +97,7 @@ AS
 );
 ```
 
-2. We'll then declare a **UDF** to invoke the PL/Java wrapper
+* We'll then declare a **UDF** to invoke the PL/Java wrapper
 ```SQL
 DROP FUNCTION IF EXISTS posdemo.tag_pos(varchar);
 CREATE FUNCTION posdemo.tag_pos(varchar)
@@ -109,7 +109,7 @@ IMMUTABLE LANGUAGE PLJAVAU;
 Note the use of `pljavau` instead of just `java` in the **UDF**. This is because we are using the untrusted version of PL/Java as the part-of-speech tagger has to read a model file from within `gp-ark-tweet-nlp.jar` 
 Without the untrusted language clause, we will encounter a `java.lang.SecurityException` when the code tries to read the model file embedded in `gp-ark-tweet-nlp.jar`. The reason Greenplum/PostGreSQL classifies languages such as PL/Python, PL/R and PL/Java(u) as untrusted is because a malicious user can run arbitrary system commands which could manipulate with the file system a DBMS is running on. Therefore, creation of UDFs in untrusted languages requires super-user privileges. However, executing these UDFs don't require such a restriction. Since a superuser can review a UDF and inspect it for any malicious code before executing it, it is not a security loophole.
 
-3. Finally we can invoke the parts-of-speech tagger on a table containing a tweet column like so:
+* Finally we can invoke the parts-of-speech tagger on a table containing a tweet column like so:
 
 ```SQL
 vatsandb=# \d+ posdemo.training_data
