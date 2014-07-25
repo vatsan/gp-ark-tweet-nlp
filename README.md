@@ -17,6 +17,8 @@ To be able to use the PL/Java wrapper you'll need to ensure some pre-requisites 
 ```SQL
 --Install PL/Java
 CREATE LANGUAGE pljava;
+--Install PL/Javau
+CREATE LANGUAGE pljavau;
 
 -- Define function mapping
 DROP FUNCTION IF EXISTS getsysprop(varchar);
@@ -102,10 +104,10 @@ CREATE FUNCTION posdemo.tag_pos(varchar)
 	RETURNS SETOF token_tag
 AS 
 	'postagger.nlp.POSTagger.tagTweet'
-IMMUTABLE LANGUAGE JAVAU;
+IMMUTABLE LANGUAGE PLJAVAU;
 ```
-Note the use of `javau` instead of just `java` in the **UDF**. This is because we are using the untrusted version of PL/Java as the part-of-speech tagger has to read a model file from within `gp-ark-tweet-nlp.jar` 
-Without the untrusted language, we will encounter a `java.lang.SecurityException` when the code tries to read the model file embedded in `gp-ark-tweet-nlp.jar`.
+Note the use of `pljavau` instead of just `java` in the **UDF**. This is because we are using the untrusted version of PL/Java as the part-of-speech tagger has to read a model file from within `gp-ark-tweet-nlp.jar` 
+Without the untrusted language clause, we will encounter a `java.lang.SecurityException` when the code tries to read the model file embedded in `gp-ark-tweet-nlp.jar`. The reason Greenplum/PostGreSQL classifies languages such as PL/Python, PL/R and PL/Java(u) as untrusted is because a malicious user can run arbitrary system commands which could manipulate with the file system a DBMS is running on. Therefore, creation of UDFs in untrusted languages requires super-user privileges. However, executing these UDFs don't require such a restriction. Since a superuser can review a UDF and inspect it for any malicious code before executing it, it is not a security loophole.
 
 3. Finally we can invoke the parts-of-speech tagger on a table containing a tweet column like so:
 
